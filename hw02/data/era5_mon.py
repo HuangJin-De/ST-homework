@@ -29,4 +29,4 @@ c.retrieve(
         'year': '2021',
         'time': '00:00',
     },
-    'hw1_mon.nc')
+    'hw02_mon.nc')

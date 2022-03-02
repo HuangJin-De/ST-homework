@@ -12,16 +12,17 @@ real, dimension(nx) :: lon
 real, dimension(ny) :: lat, f, fcos
 real, dimension(nz) :: pres
 real, dimension(nx,ny,nz,nt) :: u, v, tp, fj, fk
-real, dimension(ny,nz,nt) :: ub, vb, tpb
-real, dimension(nx,ny,nz) :: um, vm, tm
 real, dimension(ny,nz) :: utb, vtb, tptb
 real*4, dimension(ny,nz) :: fjb, fkb, sfjb, sfkb
 character(200) :: path, filename
 
+! how to compile me
+! ifort -free -O3 -mcmodel=large -shared-intel -heap-arrays 10 epflux_cal.F
+! $(nc-config --fflags --flibs)
+
 path="/data/der0318/work/ST"
 
-write(filename,112) trim(path), "/data/hw1_210622.nc"
-!write(filename,112) trim(path), "/data/hw1.nc"
+write(filename,112) trim(path), "/data/hw02_210622.nc"
 112 format(2A)
 
 ierr = nf90_open(trim(filename),NF90_NOWRITE,ncid1)
@@ -84,42 +85,6 @@ tp=tp*dum1+dum2
 
 ierr = nf90_close(ncid1)
 
-!write(filename,112) trim(path), "/data/hw1_mon.nc"
-!
-!ierr = nf90_open(trim(filename),NF90_NOWRITE,ncid1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "open fail"
-!
-!! read variables
-!ierr = nf90_inq_varid(ncid1,"u",varid1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "var_inq fail"
-!ierr = nf90_get_var(ncid1,varid1,um,start=(/ 1,1,1,1 /),count=(/ nx,ny,nz,1 /))
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read fail"
-!ierr = nf90_get_att(ncid1, varid1, "scale_factor", dum1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read scale fail"
-!ierr = nf90_get_att(ncid1, varid1, "add_offset", dum2)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read offset fail"
-!um=um*dum1+dum2
-!
-!ierr = nf90_inq_varid(ncid1,"v",varid1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "var_inq fail"
-!ierr = nf90_get_var(ncid1,varid1,vm,start=(/ 1,1,1,1 /),count=(/ nx,ny,nz,1 /))
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read fail"
-!ierr = nf90_get_att(ncid1, varid1, "scale_factor", dum1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read scale fail"
-!ierr = nf90_get_att(ncid1, varid1, "add_offset", dum2)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read offset fail"
-!vm=vm*dum1+dum2
-!
-!ierr = nf90_inq_varid(ncid1,"t",varid1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "var_inq fail"
-!ierr = nf90_get_var(ncid1,varid1,tm,start=(/ 1,1,1,1 /),count=(/ nx,ny,nz,1 /))
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read fail"
-!ierr = nf90_get_att(ncid1, varid1, "scale_factor", dum1)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read scale fail"
-!ierr = nf90_get_att(ncid1, varid1, "add_offset", dum2)
-!IF (ierr/=nf90_noerr) WRITE(*,*) "read offset fail"
-!tm=tm*dum1+dum2
-
 
 !write(*,*) lon
 !write(*,*) t(720,360,37,:)
@@ -127,9 +92,7 @@ ierr = nf90_close(ncid1)
 ! calculation
 
 ! zonal mean
-!ub=sum(u,1)/real(nx)
 utb=sum(sum(u,4),1)/real(nx*nt)
-!vb=sum(v,1)/real(nx)
 vtb=sum(sum(v,4),1)/real(nx*nt)
 
 do k=1,nz
@@ -137,28 +100,21 @@ do k=1,nz
   tp(:,:,k,:)=tp(:,:,k,:)*dum1
 enddo
 
-!tpb=sum(tp,1)/real(nx)
 tptb=sum(sum(tp,4),1)/real(nx*nt)
-
-!um=sum(u,4)/real(nt)
-!vm=sum(v,4)/real(nt)
-!tm=sum(tp,4)/real(nt)
 
 do t=1,nt
 do k=1,nz
 do j=1,ny
 do i=1,nx
   fj(i,j,k,t)=-(u(i,j,k,t)-utb(j,k))*(v(i,j,k,t)-vtb(j,k))*a*fcos(j)
-  !fj(i,j,k,1)=-(um(i,j,k)-utb(j,k))*(vm(i,j,k)-vtb(j,k))*a*fcos(j)
   fk(i,j,k,t)=(v(i,j,k,t)-vtb(j,k))*(tp(i,j,k,t)-tptb(j,k))*f(j)*a*fcos(j)
-  !fk(i,j,k,1)=(vm(i,j,k)-vtb(j,k))*(tm(i,j,k)-tptb(j,k))*f(j)*a*fcos(j)
 enddo
 enddo
 enddo
 enddo
 
-fjb=sum(sum(fj,4),1)/real(nx*nt)!*real(nt)
-fkb=sum(sum(fk,4),1)/real(nx*nt)!*real(nt)
+fjb=sum(sum(fj,4),1)/real(nx*nt)
+fkb=sum(sum(fk,4),1)/real(nx*nt)
 
 do k=1,nz
 do j=1,ny

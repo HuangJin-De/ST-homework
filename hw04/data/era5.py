@@ -8,7 +8,8 @@ c.retrieve(
         'product_type': 'reanalysis',
         'format': 'netcdf',
         'variable': [
-            'geopotential',
+            'temperature', 'u_component_of_wind', 'v_component_of_wind',
+            'geopotential', 
         ],
         'pressure_level': [
             '1', '2', '3',
